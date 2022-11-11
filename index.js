@@ -27,6 +27,12 @@ const run = async () => {
             }
             res.send(result);
         })
+        app.post ('/services',async(req,res)=>{
+            const service = req.body;
+            console.log(service);
+            const result = await servicesCollection.insertOne(service);
+            res.send(result);
+        })
         app.get('/service/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -47,6 +53,13 @@ const run = async () => {
             else if (serviceID) query = { "serviceID": serviceID };
             const data = reviewsCollection.find(query);
             const result = await data.toArray();
+            res.send(result);
+        })
+        app.delete('/reviews/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const query = { _id: ObjectId(id) };
+            const result = await reviewsCollection.deleteOne(query);
             res.send(result);
         })
     }
