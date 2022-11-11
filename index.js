@@ -11,6 +11,21 @@ const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.lf7jbxk.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+const verifyJWT = (req,res,next)=>{
+    const headerInfo = req.headers.authorization;
+    if(!headerInfo){
+        return res.status(401).send({message:"Unauthorized Access"});
+    } 
+    const token = headerInfo.split(' ')[1];
+    jwt.verify(token, process.env.SECURE_PASSWORD_JWT , function (err, decoded) {
+        if (err) {
+            return res.status(401).send({ message: 'unauthorized access' });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 const run = async () => {
     const servicesCollection = client.db("assignment11").collection("services");
     const reviewsCollection = client.db("assignment11").collection("reviews");
@@ -19,7 +34,7 @@ const run = async () => {
         app.post('/jwt', async (req, res) => {
             const userEmail = req.body;
             console.log(userEmail);
-            const token = jwt.sign(userEmail , process.env.SECURE_PASSWORD_JWT , { expiresIn: '1h' });
+            const token = jwt.sign(userEmail , process.env.SECURE_PASSWORD_JWT , { expiresIn: '1d' });
             console.log(token);
             res.send({token});
         })
@@ -55,10 +70,15 @@ const run = async () => {
             const result = await reviewsCollection.insertOne(review);
             res.send(result);
         })
-        app.get('/reviews', async (req, res) => {
+        // jwt 2nd step
+        app.get('/reviews',verifyJWT, async (req, res) => {
+            const decoded = req.decoded;
+            if (decoded.email !== req.query.email) {
+                res.status(403).send({ message: 'unauthorized access' })
+            }
+            // here jwt work has been finished
             const email = req.query.email;
             const serviceID = req.query.serviceID;
-            console.log(email);
             let query = {};
             if (email) query = { "email": email };
             else if (serviceID) query = { "serviceID": serviceID };
