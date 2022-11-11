@@ -55,6 +55,21 @@ const run = async () => {
             const result = await data.toArray();
             res.send(result);
         })
+        app.get('/reviews/:id',async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await reviewsCollection.findOne(query);
+            res.send(result);
+        })
+        app.put('/reviews/:id',async(req,res)=>{
+            const id = req.params.id;
+            const review = req.body;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateUser = {  $set : { serviceReview:review } }  
+            const result = await reviewsCollection.updateOne(query, updateUser, options);
+            res.send(result)
+        })
         app.delete('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
